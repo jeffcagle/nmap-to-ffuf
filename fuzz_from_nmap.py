@@ -68,6 +68,7 @@ def run_ffuf(ip, port, protocol, wordlist_path, max_time):
 	'-recursion-depth', '1',
 	'-rate', '100',
 	'-maxtime', max_time,
+	'-H', 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
 	'-s',
         '-json',
         '-o', output_file
