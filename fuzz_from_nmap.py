@@ -19,10 +19,18 @@ License: GNU GPL
 
 import os
 import subprocess
+import random
+import json
 import xml.etree.ElementTree as ET
 
 WEB_PORTS_HTTP = [80, 8080, 8000]
 WEB_PORTS_HTTPS = [443, 8443]
+USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
+    "curl/7.68.0",
+    "python-requests/2.25.1"
+]
 
 def parse_nmap_xml(file_path):
     print(f"[*] Parsing Nmap XML: {file_path}")
@@ -50,12 +58,41 @@ def parse_nmap_xml(file_path):
 
     return targets
 
+def choose_user_agent():
+    return random.choice(USER_AGENTS)
+
+def prepare_target_output_dir(ip, port):
+    folder_name = f"{ip}_{port}"
+    output_dir = os.path.join("output", folder_name)
+    os.makedirs(output_dir, exist_ok=True)
+    return output_dir
+
+def write_summary(ip, port, output_dir, output_file):
+    summary_file = os.path.join(output_dir, "summary.txt")
+    try:
+        with open(output_file, "r") as f:
+            ffuf_data = json.load(f)
+        results = ffuf_data.get("results", [])
+
+        with open(summary_file, "w") as f:
+            f.write(f"Target: {ip}:{port}\n")
+            f.write(f"Scan output: {output_file}\n")
+            f.write("Matched paths:\n")
+            for r in results:
+                f.write(f"{r.get('url')}\n")
+
+        print(f"[+] Summary written to {summary_file}")
+    except Exception as e:
+        print(f"[-] Failed to write summary for {ip}:{port}: {e}")
+
 def run_ffuf(ip, port, protocol, wordlist_path, max_time):
-    base_url = f"{protocol}://{ip}:{port}"
-    url = f"{base_url}/FUZZ"
+    url = f"{protocol}://{ip}:{port}/FUZZ"
     print(f"[+] Running ffuf on {url}")
 
-    output_file = f"ffuf_{ip}_{port}.json"
+    output_dir = prepare_target_output_dir(ip, port)
+    output_file = os.path.join(output_dir, "ffuf_results.json")
+
+    chosen_agent = choose_user_agent()
 
     cmd = [
         'ffuf',
@@ -66,9 +103,10 @@ def run_ffuf(ip, port, protocol, wordlist_path, max_time):
 	'-ac',
         '-recursion',  # Recursive fuzzing
 	'-recursion-depth', '1',
-	'-rate', '100',
+	'-rate', '50',
+	'-p', '0.05',
 	'-maxtime', max_time,
-	'-H', 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+	'-H', f'User-Agent: {chosen_agent}',
 	'-s',
         '-json',
         '-o', output_file
@@ -77,6 +115,8 @@ def run_ffuf(ip, port, protocol, wordlist_path, max_time):
     subprocess.run(cmd)
 
     print(f"[+] ffuf scan complete. Output saved to {output_file}")
+
+    write_summary(ip, port, output_dir, output_file)
 
 def main():
     nmap_xml_path = input("Enter path to Nmap XML file: ").strip()
@@ -98,7 +138,7 @@ def main():
         return
 
     for ip, port, protocol in targets:
-        print(f"[*] Target: {ip}:{port} ({protocol})")
+        print(f"[*] Target: {ip}:{port} ({protocol})\n")
         run_ffuf(ip, port, protocol, wordlist_path, max_time)
 
 if __name__ == "__main__":
