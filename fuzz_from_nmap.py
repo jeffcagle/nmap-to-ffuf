@@ -88,19 +88,25 @@ def write_summary(ip, port, output_dir, output_file):
 
 def run_gowitness(ip, port, protocol, output_dir):
     url = f"{protocol}://{ip}:{port}"
-    screenshot_path = os.path.join(output_dir, "screenshots")
-    os.makedirs(screenshot_path, exist_ok=True)
+    screenshot_workspace = os.path.join(output_dir, "gowitness_workspace")
+    os.makedirs(screenshot_workspace, exist_ok=True)
 
-    cmd = [
-        "gowitness", "single",
-        "--url", url,
+    urls_file = os.path.join(screenshot_workspace, "urls.txt")
+    with open(urls_file, "w") as f:
+        f.write(url + "\n")
+
+    print(f"[+] Initializing gowitness workspace at {screenshot_workspace}")
+    subprocess.run(["gowitness", "init", "--db", os.path.join(screenshot_workspace, "gowitness.db")])
+
+    print(f"[+] Running gowitness scan on {url}")
+    subprocess.run([
+        "gowitness", "scan",
+        "--db", os.path.join(screenshot_workspace, "gowitness.db"),
+        "--source", urls_file,
+        "--destination", screenshot_workspace,
         "--disable-http2",
-        "--chrome-path", "/usr/bin/chromium",
-        "--destination", screenshot_path
-    ]
-
-    print(f"[+] Capturing screenshot with gowitness: {url}")
-    subprocess.run(cmd)
+        "--chrome-path", "/usr/bin/chromium"  # adjust if needed
+    ])
 
 def run_ffuf(ip, port, protocol, wordlist_path, max_time):
     url = f"{protocol}://{ip}:{port}/FUZZ"
