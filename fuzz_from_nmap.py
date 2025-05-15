@@ -100,10 +100,11 @@ def run_gowitness(ip, port, protocol, output_dir):
     with open(urls_file, "r") as url_input:
         subprocess.run([
             "gowitness", "scan",
-            "--destination", workspace,
             "--disable-http2",
-            "--chrome-path", "/usr/bin/chromium"  # Adjust if needed
+            "--chrome-path", "/usr/bin/chromium"
         ], stdin=url_input)
+
+    print(f"[+] Screenshot saved (check ~/.gowitness/screenshots/ or working dir)")
 
 def run_ffuf(ip, port, protocol, wordlist_path, max_time):
     url = f"{protocol}://{ip}:{port}/FUZZ"
