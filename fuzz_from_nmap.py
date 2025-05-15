@@ -97,11 +97,11 @@ def run_gowitness(ip, port, protocol, output_dir):
 
     print(f"[+] Taking screenshot with gowitness: {url}")
 
+    # Run gowitness (no destination, no disable-http2)
     with open(urls_file, "r") as url_input:
         subprocess.run([
             "gowitness", "scan",
-            "--disable-http2",
-            "--chrome-path", "/usr/bin/chromium"
+            "--chrome-path", "/usr/bin/chromium"  # adjust as needed
         ], stdin=url_input)
 
     print(f"[+] Screenshot saved (check ~/.gowitness/screenshots/ or working dir)")
