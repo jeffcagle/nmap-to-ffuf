@@ -87,19 +87,38 @@ def write_summary(ip, port, output_dir, output_file):
         print(f"[-] Failed to write summary for {ip}:{port}: {e}")
 
 def run_gowitness(ip, port, protocol, output_dir):
-    url = f"{protocol}://{ip}:{port}"
+    base_url = f"{protocol}://{ip}:{port}"
     workspace = os.path.join(output_dir, "gowitness_workspace")
     os.makedirs(workspace, exist_ok=True)
 
     urls_file = os.path.join(workspace, "urls.txt")
+    urls = set()
+    urls.add(base_url)
+
+    # Attempt to read ffuf results and extract URLs
+    ffuf_output = os.path.join(output_dir, "ffuf_results.json")
+    if os.path.exists(ffuf_output):
+        try:
+            with open(ffuf_output, "r") as f:
+                ffuf_data = json.load(f)
+                for r in ffuf_data.get("results", []):
+                    url = r.get("url")
+                    if url:
+                        urls.add(url)
+        except Exception as e:
+            print(f"[-] Could not parse ffuf results: {e}")
+
+    # Write all URLs (base + paths) to file
     with open(urls_file, "w") as f:
-        f.write(url + "\n")
+        for url in sorted(urls):
+            f.write(url + "\n")
 
-    print(f"[+] Taking screenshot with gowitness: {url}")
+    print(f"[+] Taking screenshots of {len(urls)} URLs with gowitness...")
 
-   subprocess.run([
-        "gowitness", "scan", "file", urls_file,  
-        "--chrome-path", "/usr/bin/chromium"    
+    subprocess.run([
+        "gowitness", "scan", "file",
+        "-f", urls_file,
+        "--chrome-path", "/usr/bin/chromium"
     ])
 
     print(f"[+] Screenshot saved (check ~/.gowitness/screenshots/ or working dir)")
