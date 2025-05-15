@@ -88,24 +88,20 @@ def write_summary(ip, port, output_dir, output_file):
 
 def run_gowitness(ip, port, protocol, output_dir):
     url = f"{protocol}://{ip}:{port}"
-    screenshot_workspace = os.path.join(output_dir, "gowitness_workspace")
-    os.makedirs(screenshot_workspace, exist_ok=True)
+    workspace = os.path.join(output_dir, "gowitness_workspace")
+    os.makedirs(workspace, exist_ok=True)
 
-    urls_file = os.path.join(screenshot_workspace, "urls.txt")
+    urls_file = os.path.join(workspace, "urls.txt")
     with open(urls_file, "w") as f:
         f.write(url + "\n")
 
-    print(f"[+] Initializing gowitness workspace at {screenshot_workspace}")
-    subprocess.run(["gowitness", "init", "--db", os.path.join(screenshot_workspace, "gowitness.db")])
-
-    print(f"[+] Running gowitness scan on {url}")
+    print(f"[+] Taking screenshot with gowitness: {url}")
     subprocess.run([
         "gowitness", "scan",
-        "--db", os.path.join(screenshot_workspace, "gowitness.db"),
         "--source", urls_file,
-        "--destination", screenshot_workspace,
+        "--destination", workspace,
         "--disable-http2",
-        "--chrome-path", "/usr/bin/chromium"  # adjust if needed
+        "--chrome-path", "/usr/bin/chromium"  # or adjust to match your system
     ])
 
 def run_ffuf(ip, port, protocol, wordlist_path, max_time):
