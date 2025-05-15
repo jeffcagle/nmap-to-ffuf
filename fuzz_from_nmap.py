@@ -1,3 +1,22 @@
+#!/usr/bin/env python3
+"""
+Author: Jeff Cagle
+Date: 2025-05-15
+Title: Nmap XML Web Target Parser + ffuf Fuzzer
+Version: 1.0
+Description:
+    This script parses Nmap XML output to identify web-facing services (HTTP/HTTPS),
+    then runs ffuf for directory fuzzing against discovered hosts and ports. It includes
+    options for recursion, rate limiting, and stealth header customization.
+
+Requirements:
+    - ffuf
+    - Python 3.x
+    - Nmap with XML output enabled (-oX)
+
+License: GNU GPL
+"""
+
 import os
 import subprocess
 import xml.etree.ElementTree as ET
