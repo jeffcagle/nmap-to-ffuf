@@ -13,6 +13,7 @@ Requirements:
     - ffuf
     - Python 3.x
     - Nmap with XML output enabled (-oX)
+    - gowitness
 
 License: GNU GPL
 """
@@ -85,6 +86,22 @@ def write_summary(ip, port, output_dir, output_file):
     except Exception as e:
         print(f"[-] Failed to write summary for {ip}:{port}: {e}")
 
+def run_gowitness(ip, port, protocol, output_dir):
+    url = f"{protocol}://{ip}:{port}"
+    screenshot_path = os.path.join(output_dir, "screenshots")
+    os.makedirs(screenshot_path, exist_ok=True)
+
+    cmd = [
+        "gowitness", "single",
+        "--url", url,
+        "--disable-http2",
+        "--chrome-path", "/usr/bin/chromium",
+        "--destination", screenshot_path
+    ]
+
+    print(f"[+] Capturing screenshot with gowitness: {url}")
+    subprocess.run(cmd)
+
 def run_ffuf(ip, port, protocol, wordlist_path, max_time):
     url = f"{protocol}://{ip}:{port}/FUZZ"
     print(f"[+] Running ffuf on {url}")
@@ -117,6 +134,7 @@ def run_ffuf(ip, port, protocol, wordlist_path, max_time):
     print(f"[+] ffuf scan complete. Output saved to {output_file}")
 
     write_summary(ip, port, output_dir, output_file)
+    run_gowitness(ip, port, protocol, output_dir)
 
 def main():
     nmap_xml_path = input("Enter path to Nmap XML file: ").strip()
