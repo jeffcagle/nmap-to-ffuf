@@ -5,8 +5,6 @@ import xml.etree.ElementTree as ET
 WEB_PORTS_HTTP = [80, 8080, 8000]
 WEB_PORTS_HTTPS = [443, 8443]
 
-WORDLIST = "/usr/share/wordlists/dirb/common.txt"  # Adjust as needed
-
 def parse_nmap_xml(file_path):
     print(f"[*] Parsing Nmap XML: {file_path}")
     tree = ET.parse(file_path)
@@ -33,7 +31,7 @@ def parse_nmap_xml(file_path):
 
     return targets
 
-def run_ffuf(ip, port, protocol):
+def run_ffuf(ip, port, protocol, wordlist_path, max_time):
     base_url = f"{protocol}://{ip}:{port}"
     url = f"{base_url}/FUZZ"
     print(f"[+] Running ffuf on {url}")
@@ -43,14 +41,14 @@ def run_ffuf(ip, port, protocol):
     cmd = [
         'ffuf',
         '-u', url,
-        '-w', WORDLIST,
+        '-w', wordlist_path,
         '-mc', '200,204,301,302,403',
         '-t', '50',
 	'-ac',
         '-recursion',  # Recursive fuzzing
 	'-recursion-depth', '1',
 	'-rate', '100',
-	'-maxtime', '120',
+	'-maxtime', max_time,
 	'-s',
         '-json',
         '-o', output_file
@@ -62,10 +60,16 @@ def run_ffuf(ip, port, protocol):
 
 def main():
     nmap_xml_path = input("Enter path to Nmap XML file: ").strip()
+    wordlist_path = input("Enter path to wordlist file: ").strip()
+    max_time = input("Enter a maxtime value to run ffuf: ").strip()
 
     if not os.path.exists(nmap_xml_path):
         print("[-] File not found.")
         return
+        
+    if not os.path.exists(wordlist_path):
+    	print("[-] Wordlist not found.")
+    	return
 
     targets = parse_nmap_xml(nmap_xml_path)
 
@@ -75,7 +79,7 @@ def main():
 
     for ip, port, protocol in targets:
         print(f"[*] Target: {ip}:{port} ({protocol})")
-        run_ffuf(ip, port, protocol)
+        run_ffuf(ip, port, protocol, wordlist_path, max_time)
 
 if __name__ == "__main__":
     main()
